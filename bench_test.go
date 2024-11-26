@@ -1,4 +1,4 @@
-package main
+package floodProtecor
 
 import (
 	"github.com/puzpuzpuz/xsync/v3"

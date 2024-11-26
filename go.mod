@@ -1,4 +1,4 @@
-module floodProtector
+module github.com/sten4eg/floodProtector
 
 go 1.23.0
 
