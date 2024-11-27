@@ -21,7 +21,7 @@ const (
 	StateBlocked
 )
 
-type connectionInfo struct {
+type ConnectionInfo struct {
 	connCount    int64
 	lastConnTime int64
 	lastConn     int64
@@ -29,15 +29,12 @@ type connectionInfo struct {
 	blockExpire  time.Time
 	_            [8]byte
 }
-type TCPAcceptor interface {
-	AcceptTCP() (net.Conn, error)
-}
 type Storage interface {
-	Store(string, connectionInfo)
-	Load(string) (connectionInfo, bool)
+	Store(string, ConnectionInfo)
+	Load(string) (ConnectionInfo, bool)
 }
 
-func (ci *connectionInfo) UpdateState(currentTime int64, connectionTime int64) {
+func (ci *ConnectionInfo) UpdateState(currentTime int64, connectionTime int64) {
 	switch ci.state {
 	case StateNormal:
 		if ci.isSuspicious(connectionTime) {
@@ -59,24 +56,19 @@ func (ci *connectionInfo) UpdateState(currentTime int64, connectionTime int64) {
 	}
 }
 
-func (ci *connectionInfo) isSuspicious(connectionTime int64) bool {
+func (ci *ConnectionInfo) isSuspicious(connectionTime int64) bool {
 	return ci.connCount > 2 && connectionTime < fastConnectionTime
 }
 
-func (ci *connectionInfo) isFlooding(connectionTime int64) bool {
+func (ci *ConnectionInfo) isFlooding(connectionTime int64) bool {
 	return ci.connCount > maxConnectionPerIP || connectionTime < normalConnectionTime
 }
 
-func (ci *connectionInfo) isBackToNormal(currentTime int64) bool {
+func (ci *ConnectionInfo) isBackToNormal(currentTime int64) bool {
 	return currentTime-ci.lastConnTime > safeConnInterval
 }
 
-func AcceptTCP(acceptor TCPAcceptor, storage Storage) (net.Conn, error) {
-	conn, err := acceptor.AcceptTCP()
-	if err != nil {
-		return nil, err
-	}
-
+func AcceptTCP(conn *net.TCPConn, storage Storage) (*net.TCPConn, error) {
 	ip, _, err := net.SplitHostPort(conn.RemoteAddr().String())
 	if err != nil {
 		_ = conn.Close()
@@ -86,7 +78,7 @@ func AcceptTCP(acceptor TCPAcceptor, storage Storage) (net.Conn, error) {
 	curTime := time.Now().UnixMilli()
 	ci, ok := storage.Load(ip)
 	if !ok {
-		ci = connectionInfo{
+		ci = ConnectionInfo{
 			state:        StateNormal,
 			connCount:    1,
 			lastConnTime: curTime,

@@ -60,7 +60,7 @@ func (m *mockTCPAcceptor) AcceptTCP() (net.Conn, error) {
 	}
 }
 func BenchmarkAcceptTCPWithFSM(b *testing.B) {
-	floodProtection := xsync.NewMapOf[string, connectionInfo]()
+	floodProtection := xsync.NewMapOf[string, ConnectionInfo]()
 
 	acceptor := &mockTCPAcceptor{
 		connections: make(chan *MockTCPConn, 10000),
